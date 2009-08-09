@@ -1,0 +1,11 @@
+== Last Changes ==
+09-Aug-2009 - 04:42 AM (First Method)
+	-Added Pearson Correlation comparsion function receiving 2 hash lists as parameters.
+		pearson_correlation(hash1,hash2)
+---------
+
+This plugin is intended to provide methods and classes in order to make easy the similarity comparsion in rails between Models and objects.
+
+This plugin is licensed under GPLv3 terms.
+
+Author: Régis Mesquita <regis@regismesquita.com>

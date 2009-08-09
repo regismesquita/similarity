@@ -13,9 +13,23 @@
 #    You should have received a copy of the GNU General Public License
 #    along with similarity.  If not, see <http://www.gnu.org/licenses/>.
 
+#Converts a Object to a hash
+def ar_object_to_hash(arObject)
+	returnedHash = Hash.new
+	arObject.class.column_names.each{|col| returnedHash.store(col,arObject[col])}
+	return returnedHash
+end
 
 #Run Pearson Correlation algorithm  
 def pearson_correlation(hash1,hash2)
+	#We are going to change some values so we're duping the variable for safety reasons.
+	hash1 = hash1.dup
+	hash2 = hash2.dup
+	#Loop in the hash eliminating any non-integer value.
+	hash1.each{|unit| hash1[unit[0]] = unit[1].to_i}
+	hash2.each{|unit| hash2[unit[0]] = unit[1].to_i}
+	
+	#Intersects keys so we have the same values in comparsion.
 	shared_keys = hash1.keys & hash2.keys
 	size = shared_keys.count
 	sum1 = hash1.values.reduce{|x,y| x+y}
@@ -28,4 +42,11 @@ def pearson_correlation(hash1,hash2)
 	if den == 0 then return 0 end
 	r = num/den
         return r
+end
+
+#Gets the similarity between 2 AR objects
+def similarity_of(arObject1,arObject2)
+		object = ar_object_to_hash(arObject1)
+		object2 = ar_object_to_hash(arObject2)
+		return pearson_correlation(object,object2)
 end

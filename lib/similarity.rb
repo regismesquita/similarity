@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 #    This file is part of Similarity.
 #
 #    Similarity is free software: you can redistribute it and/or modify
@@ -12,46 +13,77 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with similarity.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# Similarity Module
+#
+# This module uses the Pearson correlation coefficient to measure similarity
+# between two objects (typically ActiveRecord instances).
+#
+# The coefficient ranges from -1 to +1, where:
+#   1 indicates perfect similarity
+#   0 indicates no similarity
+#  -1 indicates perfect dissimilarity (inverse relationship)
+#
+# Examples in similarity context:
+#   1 (Perfect Similarity): Objects have identical attribute patterns.
+#      e.g., User1: {age: 25, posts: 10, karma: 100}
+#            User2: {age: 30, posts: 12, karma: 120}
+#      (All attributes scale proportionally)
+#
+#   0 (No Similarity): Objects have no discernible pattern in attributes.
+#      e.g., User1: {age: 25, posts: 100, karma: 50}
+#            User2: {age: 50, posts: 10, karma: 500}
+#
+#  -1 (Perfect Dissimilarity): Objects have inverse attribute patterns.
+#      e.g., Product1: {price: 100, stock: 50, sales: 1000}
+#            Product2: {price: 50, stock: 100, sales: 500}
+#      (As one attribute increases, the other decreases proportionally)
+#
+# In practice, most similarities fall between these extreme values.
+#
+# Usage:
+#   similarity = Similarity.similarity_of(object1, object2)
+
 class Similarity
   def self.similarity_of(obj1,obj2)
-    new.similarity_of(obj1,obj2)
+    new.similarity_of(obj1, obj2)
   end
-  #Converts a Object to a hash
-  def ar_object_to_hash(arObject)
-  	returnedHash = Hash.new
-  	arObject.class.column_names.each{|col| returnedHash.store(col,arObject[col])}
-  	return returnedHash
+
+  # Convert ActiveRecord object to a hash
+  def object_to_hash(ar_object)
+    ar_object.attributes
   end
-  
-  #Run Pearson Correlation algorithm  
-  def pearson_correlation(hash1,hash2)
-	return 0 if hash1.empty? || hash2.empty?
-  	#We are going to change some values so we're duping the variable for safety reasons.
-  	hash1 = hash1.dup
-  	hash2 = hash2.dup
-  	#Loop in the hash eliminating any non-integer value.
-  	hash1.each{|unit| hash1[unit[0]] = unit[1].to_i}
-  	hash2.each{|unit| hash2[unit[0]] = unit[1].to_i}
-  	
-  	#Intersects keys so we have the same values in comparsion.
-  	shared_keys = hash1.keys & hash2.keys
-  	size = shared_keys.count
-  	sum1 = hash1.values.reduce{|x,y| x+y}
-  	sum2 = hash2.values.reduce{|x,y| x+y}
-  	sum1square = hash1.values.map{|x| x**2}.reduce{|x,y| x+y}
-  	sum2square = hash2.values.map{|x| x**2}.reduce{|x,y| x+y}
-  	multi = shared_keys.map{|key| hash1[key]*hash2[key]}.reduce{|x,y| x+y}
-  	num = multi-(sum1*sum2/size)
-  	den = Math.sqrt((sum1square-(sum1**2)/size)*(sum2square-(sum2**2)/size))
-  	if den == 0 then return 0 end
-  	r = num/den
-          return r
+
+  # Calculate Pearson correlation coefficient between two hashes
+  def pearson_correlation(hash1, hash2)
+    # Find common keys between the two hashes
+    shared_keys = hash1.keys & hash2.keys
+    return 0 if shared_keys.empty?
+
+    # Extract values for shared keys and convert to integers
+    values1, values2 = shared_keys.map { |k| [hash1[k].to_i, hash2[k].to_i] }.transpose
+    n = shared_keys.size
+
+    # Calculate sums and squared sums
+    sum1, sum2 = values1.sum, values2.sum
+    sum_squares1 = values1.sum { |v| v**2 }
+    sum_squares2 = values2.sum { |v| v**2 }
+    
+    # Calculate sum of products
+    sum_products = values1.zip(values2).sum { |v1, v2| v1 * v2 }
+
+    # Pearson correlation formula components
+    numerator = sum_products - (sum1 * sum2 / n)
+    denominator = Math.sqrt((sum_squares1 - sum1**2 / n) * (sum_squares2 - sum2**2 / n))
+
+    # Avoid division by zero and return result
+    denominator.zero? ? 0 : numerator / denominator
   end
-  
-  #Gets the similarity between 2 AR objects
-  def similarity_of(arObject1,arObject2)
-  		object = ar_object_to_hash(arObject1)
-  		object2 = ar_object_to_hash(arObject2)
-  		return pearson_correlation(object,object2)
+
+  # Calculate similarity between two ActiveRecord objects
+  def similarity_of(object1, object2)
+    pearson_correlation(object_to_hash(object1), object_to_hash(object2))
   end
 end
+

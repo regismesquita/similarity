@@ -1,4 +1,4 @@
-
+> This is a very old project that I keep around just for fun.
 
 # Similarity Module
 
